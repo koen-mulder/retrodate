@@ -483,10 +483,6 @@ pub struct Results {
     /// Cursor for the next page of results (Immich v3.2+ search API).
     pub next_cursor: Option<String>,
 
-    /// Deprecated page token kept for older Immich responses.
-    #[serde(default)]
-    pub next_page: Option<String>,
-
     /// The total number of assets that match the query.
     #[serde(default)]
     pub total: usize,
@@ -600,7 +596,6 @@ mod test {
       }
     ],
     "nextCursor": null,
-    "nextPage": null,
     "total": 1
   }
 }"#;

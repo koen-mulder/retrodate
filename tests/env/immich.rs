@@ -147,7 +147,6 @@ fn post_search_metadata(request: &mut Request, state: &mut [Asset]) -> Option<Re
             total: match_count,
             items: matches,
             next_cursor,
-            next_page: None,
         },
     }) else {
         return Some(Response::empty(500).boxed());
