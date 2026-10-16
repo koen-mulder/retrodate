@@ -143,7 +143,7 @@ impl App {
                 if datetime.year() != year as i16 {
                     debug(format!(
                         "Skipping {}, parsed year '{}' doesn't match searched year '{}'.",
-                        asset.original_file_name, 
+                        asset.original_file_name,
                         datetime.year(),
                         year
                     ));
