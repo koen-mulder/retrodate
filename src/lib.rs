@@ -72,11 +72,11 @@ pub struct Args {
     #[argh(option)]
     pub host: String,
 
-    /// set the creation date of an asset, only if that asset doesn't have a creation date already.
+    /// set the creation date of an asset, only if that asset doesn't have a creation date already (default mode).
     #[argh(switch)]
     pub if_unset: bool,
 
-    /// set the creation date of an asset, even if that asset has a creation date already. It sets --if-unset.
+    /// set the creation date of an asset, even if that asset has a creation date already. Implies --if-unset.
     #[argh(switch)]
     pub overwrite: bool,
 
@@ -84,6 +84,10 @@ pub struct Args {
     /// Provide a `jiff::Span` string such as `30m`, `1h`, `2d`, or `1h30m`.
     #[argh(option)]
     pub threshold: Option<String>,
+
+    /// apply changes; without this flag, only print what would be done
+    #[argh(switch)]
+    pub apply_changes: bool,
 
     /// explain what is being done
     #[argh(switch, short = 'v')]
@@ -105,6 +109,7 @@ pub struct Args {
 pub struct App {
     client: Client,
     mode: Mode,
+    apply_changes: bool,
 
     year_range: RangeInclusive<u16>,
 }
@@ -136,6 +141,12 @@ impl App {
                 // For example, the needle "2002" matches the time 20:02 in this file name "201704220-2002.jpg".
                 // We'll skip then.
                 if datetime.year() != year as i16 {
+                    debug(format!(
+                        "Skipping {}, parsed year '{}' doesn't match searched year '{}'.",
+                        asset.original_file_name,
+                        datetime.year(),
+                        year
+                    ));
                     continue;
                 }
 
@@ -159,18 +170,6 @@ impl App {
                     .flatten();
 
                 match (self.mode, maybe_date_time_original) {
-                    (Mode::DryRun, None) => {
-                        println!(
-                            "Date of {} will be set to {}. Call `retrodate` with --if-unset to apply the change.",
-                            asset.original_file_name, datetime,
-                        );
-                    }
-                    (Mode::DryRun, Some(date_time_original)) => {
-                        println!(
-                            "Date of {} will be changed from {} to {}. Call `retrodate` with --overwrite to apply the change.",
-                            asset.original_file_name, date_time_original, datetime,
-                        );
-                    }
                     (Mode::IfUnset, Some(date_time_original)) => {
                         debug(format!(
                             "Skipping {}, the asset has datetime set {}. Call `retrodate` with --overwrite to replace the existing datetime.",
@@ -180,11 +179,18 @@ impl App {
                         continue;
                     }
                     (Mode::IfUnset | Mode::Overwrite(_), None) => {
-                        let _ = set_assets_date_time(&asset.id, &datetime, &self.client)?;
-                        debug(format!(
-                            "Date of {} set to {}.",
-                            asset.original_file_name, datetime
-                        ));
+                        if self.apply_changes {
+                            let _ = set_assets_date_time(&asset.id, &datetime, &self.client)?;
+                            debug(format!(
+                                "Date of {} set to {}.",
+                                asset.original_file_name, datetime
+                            ));
+                        } else {
+                            println!(
+                                "Date of {} will be set to {}. Call `retrodate` with --apply-changes to apply the change.",
+                                asset.original_file_name, datetime,
+                            );
+                        }
                     }
                     (Mode::Overwrite(interval), Some(date_time_original)) => {
                         if (datetime - date_time_original)
@@ -193,11 +199,18 @@ impl App {
                             .unwrap()
                             == core::cmp::Ordering::Greater
                         {
-                            let _ = set_assets_date_time(&asset.id, &datetime, &self.client)?;
-                            debug(format!(
-                                "Change date of {} from {} to {}.",
-                                asset.original_file_name, date_time_original, datetime
-                            ));
+                            if self.apply_changes {
+                                let _ = set_assets_date_time(&asset.id, &datetime, &self.client)?;
+                                debug(format!(
+                                    "Changed date of {} from {} to {}.",
+                                    asset.original_file_name, date_time_original, datetime
+                                ));
+                            } else {
+                                println!(
+                                    "Date of {} will be changed from {} to {}. Call `retrodate` with --apply-changes to apply the change.",
+                                    asset.original_file_name, date_time_original, datetime,
+                                );
+                            }
                         } else {
                             debug(format!(
                                 "Skipping {}, the time difference between the existing datetime ({}) and the datetime extracted from the filename ({}) doesn't surpass the threshold of {:?}",
@@ -215,11 +228,8 @@ impl App {
 
 #[derive(Debug, Default, Copy, Clone)]
 pub enum Mode {
-    // Do not mutate assets.
-    #[default]
-    DryRun,
-
     // Only mutate assets that are lacking a creation date.
+    #[default]
     IfUnset,
 
     // Mutate all assets, both with and without creation date.
@@ -233,6 +243,7 @@ pub struct Builder {
     until_year: u16,
 
     mode: Mode,
+    apply_changes: bool,
 }
 
 impl Builder {
@@ -245,12 +256,13 @@ impl Builder {
             },
             from_year: 2000,
             until_year: current_year(),
-            mode: Mode::DryRun,
+            mode: Mode::IfUnset,
+            apply_changes: false,
         }
     }
 
-    pub fn dry_run(mut self) -> Self {
-        self.mode = Mode::DryRun;
+    pub fn apply_changes(mut self) -> Self {
+        self.apply_changes = true;
         self
     }
 
@@ -283,6 +295,7 @@ impl Builder {
         App {
             client: self.client,
             mode: self.mode,
+            apply_changes: self.apply_changes,
             year_range: self.from_year..=self.until_year,
         }
     }
