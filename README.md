@@ -64,11 +64,18 @@ Date of IMG_20180301_131212.jpg set to 2018-03-01T13:12:12.
 Date of 20190720_130508.jpg set to 2019-07-20T13:05:08.
 ```
 
+Only process assets in a specific album:
+
+```bash
+./retrodate --api-key "${API_KEY}" --host "${IMMICH_API}" --if-unset --album 9e8449ee-9f27-440f-949b-69f98a200921 -v
+Date of Screenshot_20230927_191315.jpg will be set to 2023-09-27T19:13:15. Call `retrodate` with --apply-changes to apply the change.
+```
+
 # Usage
 
 ```bash
 $ ./retrodate --help
-Usage: retrodate --api-key <api-key> --host <host> [--if-unset] [--overwrite] [--threshold <threshold>] [--apply-changes] [--allow-single-digit-date] [--include-uuid-filenames] [-v] [--from-year <from-year>] [--until-year <until-year>] [--timeout <timeout>]
+Usage: retrodate --api-key <api-key> --host <host> [--if-unset] [--overwrite] [--threshold <threshold>] [--apply-changes] [--allow-single-digit-date] [--include-uuid-filenames] [--album <album>] [-v] [--from-year <from-year>] [--until-year <until-year>] [--timeout <timeout>]
 
 Retrodate is a utility to retroactively date images on Immich based on an image's filename. This tool queries Immich for all filenames that contain a year, e.g. 2021 in 20210901_115950.jpg. Then, the date (and optional time) is parsed from the filename. You can control search using the arguments --from-year and --until-year.
 
@@ -91,6 +98,8 @@ Options:
   --include-uuid-filenames
                     also process files whose name (without extension) is a UUID;
                     these are skipped by default
+  --album           only process assets that belong to the album with this UUID
+                    (requires album.read)
   -v, --verbose     explain what is being done
   --from-year       the earliest year to include in the search, defaults to 2000
   --until-year      the latest year to include in the search, defaults to the

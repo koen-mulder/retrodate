@@ -138,6 +138,10 @@ pub struct Args {
     #[argh(switch)]
     pub include_uuid_filenames: bool,
 
+    /// only process assets that belong to the album with this UUID (requires album.read)
+    #[argh(option)]
+    pub album: Option<String>,
+
     /// explain what is being done
     #[argh(switch, short = 'v')]
     pub verbose: bool,
@@ -161,6 +165,7 @@ pub struct App {
     apply_changes: bool,
     allow_single_digit_date: bool,
     include_uuid_filenames: bool,
+    album_id: Option<String>,
 
     year_range: RangeInclusive<u16>,
 }
@@ -172,11 +177,16 @@ impl App {
 
     pub fn run(self) -> Result<()> {
         for year in self.year_range {
-            let assets = get_assets_by_filename(&format!("{year}"), &self.client)?;
+            let assets =
+                get_assets_by_filename(&format!("{year}"), self.album_id.as_deref(), &self.client)?;
             debug(format!(
-                "Found {} assets that have {} in their file name.",
+                "Found {} assets that have {} in their file name{}.",
                 assets.len(),
-                year
+                year,
+                self.album_id
+                    .as_ref()
+                    .map(|id| format!(" and belong to album {id}"))
+                    .unwrap_or_default()
             ));
 
             for asset in assets {
@@ -307,6 +317,7 @@ pub struct Builder {
     apply_changes: bool,
     allow_single_digit_date: bool,
     include_uuid_filenames: bool,
+    album_id: Option<String>,
 }
 
 impl Builder {
@@ -323,6 +334,7 @@ impl Builder {
             apply_changes: false,
             allow_single_digit_date: false,
             include_uuid_filenames: false,
+            album_id: None,
         }
     }
 
@@ -338,6 +350,11 @@ impl Builder {
 
     pub fn include_uuid_filenames(mut self) -> Self {
         self.include_uuid_filenames = true;
+        self
+    }
+
+    pub fn album(mut self, album_id: String) -> Self {
+        self.album_id = Some(album_id);
         self
     }
 
@@ -373,6 +390,7 @@ impl Builder {
             apply_changes: self.apply_changes,
             allow_single_digit_date: self.allow_single_digit_date,
             include_uuid_filenames: self.include_uuid_filenames,
+            album_id: self.album_id,
             year_range: self.from_year..=self.until_year,
         }
     }
@@ -385,7 +403,11 @@ pub struct Client {
     pub timeout: Duration,
 }
 
-fn get_assets_by_filename(file_name: &str, client: &Client) -> Result<Vec<Asset>> {
+fn get_assets_by_filename(
+    file_name: &str,
+    album_id: Option<&str>,
+    client: &Client,
+) -> Result<Vec<Asset>> {
     let url = format!("{}/search/metadata", client.host);
 
     let mut assets: Vec<Asset> = Vec::new();
@@ -399,6 +421,9 @@ fn get_assets_by_filename(file_name: &str, client: &Client) -> Result<Vec<Asset>
                 }),
                 // Match legacy search behaviour: exclude trashed assets.
                 trashed_at: Some(NullableEq { eq: None }),
+                album_ids: album_id.map(|id| IdsFilter {
+                    any: Some(vec![id.to_string()]),
+                }),
             },
             cursor: cursor.clone(),
         };
@@ -627,6 +652,8 @@ pub struct SearchFilter {
     pub original_file_name: Option<StringPatternFilter>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trashed_at: Option<NullableEq>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub album_ids: Option<IdsFilter>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -634,6 +661,14 @@ pub struct SearchFilter {
 pub struct StringPatternFilter {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub like: Option<String>,
+}
+
+/// `{ "any": ["uuid", ...] }` style filter for Immich relationship IDs (albums, people, tags).
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct IdsFilter {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub any: Option<Vec<String>>,
 }
 
 /// `{ "eq": null }` style filter operand used by Immich's search API.
