@@ -16,43 +16,83 @@ use std::{
 use ureq::http::Uri;
 
 pub static VERBOSE: AtomicBool = AtomicBool::new(false);
+
 static DATE_RE: LazyLock<Vec<Regex>> = LazyLock::new(|| {
     vec![
-        //  * YYYYMMDD
-        Regex::new(r#"(?<year>\d{4})(?<month>\d{2})(?<day>\d{2})"#)
+        // YYYYMMDD
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)(?<month>0[1-9]|1[0-2])(?<day>0[1-9]|[1-2][0-9]|3[0-1])"#)
             .expect("This shouldn't panic at runtime."),
         // YYYY-MM-DD
-        Regex::new(r#"(?<year>\d{4})[[:punct:]]{1}(?<month>\d{1,2})[[:punct:]]{1}(?<day>\d{1,2})"#)
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)-(?<month>0[1-9]|1[0-2])-(?<day>0[1-9]|[1-2][0-9]|3[0-1])"#)
             .expect("This shouldn't panic at runtime."),
-        //  * DDMMYYYY
-        Regex::new(r#"(?<day>\d{2})(?<month>\d{2})(?<year>\d{4})"#)
+        // YYYY.MM.DD
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)\.(?<month>0[1-9]|1[0-2])\.(?<day>0[1-9]|[1-2][0-9]|3[0-1])"#)
+        .expect("This shouldn't panic at runtime."),
+        // DDMMYYYY
+        Regex::new(r#"(?<day>0[1-9]|[1-2][0-9]|3[0-1])(?<month>0[1-9]|1[0-2])(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
             .expect("This shouldn't panic at runtime."),
-        //  * DD-MM-YYYY
-        Regex::new(r#"(?<day>\d{1,2})[[:punct:]]{1}(?<month>\d{1,2})[[:punct:]]{1}(?<year>\d{4})"#)
+        // DD-MM-YYYY
+        Regex::new(r#"(?<day>0[1-9]|[1-2][0-9]|3[0-1])-(?<month>0[1-9]|1[0-2])-(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
             .expect("This shouldn't panic at runtime."),
-        //  * YYYYDDMM
-        Regex::new(r#"(?<year>\d{4})(?<day>\d{2})(?<month>\d{2})"#)
+        // DD.MM.YYYY
+        Regex::new(r#"(?<day>0[1-9]|[1-2][0-9]|3[0-1])\.(?<month>0[1-9]|1[0-2])\.(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
             .expect("This shouldn't panic at runtime."),
-        //  * YYYY-DD-MM
-        Regex::new(r#"(?<year>\d{4})[[:punct:]]{1}(?<day>\d{1,2})[[:punct:]]{1}(?<month>\d{1,2})"#)
+        // YYYYDDMM
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)(?<day>0[1-9]|[1-2][0-9]|3[0-1])(?<month>0[1-9]|1[0-2])"#)
             .expect("This shouldn't panic at runtime."),
-        //  * MMDDYYYY
-        Regex::new(r#"(?<month>\d{1,2})(?<day>\d{1,2})(?<year>\d{4})"#)
+        // YYYY-DD-MM
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)-(?<day>0[1-9]|[1-2][0-9]|3[0-1])-(?<month>0[1-9]|1[0-2])"#)
             .expect("This shouldn't panic at runtime."),
-        //  * MM-DD-YYYY
-        Regex::new(r#"(?<month>\d{2})[[:punct:]]{1}(?<day>\d{2})[[:punct:]]{1}(?<year>\d{4})"#)
+        // YYYY.DD.MM
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)\.(?<day>0[1-9]|[1-2][0-9]|3[0-1])\.(?<month>0[1-9]|1[0-2])"#)
+            .expect("This shouldn't panic at runtime."),
+        // MMDDYYYY
+        Regex::new(r#"(?<month>0[1-9]|1[0-2])(?<day>0[1-9]|[1-2][0-9]|3[0-1])(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
+            .expect("This shouldn't panic at runtime."),
+        // MM-DD-YYYY
+        Regex::new(r#"(?<month>0[1-9]|1[0-2])-(?<day>0[1-9]|[1-2][0-9]|3[0-1])-(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
+            .expect("This shouldn't panic at runtime."),
+        // MM.DD.YYYY
+        Regex::new(r#"(?<month>0[1-9]|1[0-2])\.(?<day>0[1-9]|[1-2][0-9]|3[0-1])\.(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
+            .expect("This shouldn't panic at runtime."),
+    ]
+});
+static DATE_SINGLE_DIGIT_RE: LazyLock<Vec<Regex>> = LazyLock::new(|| {
+    vec![
+        // YYYY-[M]M-[D]D
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)-(?<month>[1-9]|1[0-2])-(?<day>[1-9]|[1-2][0-9]|3[0-1])"#)
+            .expect("This shouldn't panic at runtime."),
+        // YYYY.[M]M.[D]D
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)\.(?<month>[1-9]|1[0-2])\.(?<day>[1-9]|[1-2][0-9]|3[0-1])"#)
+            .expect("This shouldn't panic at runtime."),
+        // [D]D-[M]M-YYYY
+        Regex::new(r#"(?<day>[1-9]|[1-2][0-9]|3[0-1])-(?<month>[1-9]|1[0-2])-(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
+            .expect("This shouldn't panic at runtime."),
+        // [D]D.[M]M.YYYY
+        Regex::new(r#"(?<day>[1-9]|[1-2][0-9]|3[0-1])\.(?<month>[1-9]|1[0-2])\.(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
+        .expect("This shouldn't panic at runtime."),
+        // [M]M-[D]D-YYYY
+        Regex::new(r#"(?<month>[1-9]|1[0-2])-(?<day>[1-9]|[1-2][0-9]|3[0-1])-(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
+            .expect("This shouldn't panic at runtime."),
+        // [M]M.[D]D.YYYY
+        Regex::new(r#"(?<month>[1-9]|1[0-2])\.(?<day>[1-9]|[1-2][0-9]|3[0-1])\.(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
             .expect("This shouldn't panic at runtime."),
     ]
 });
 
 static TIME_RE: LazyLock<Vec<Regex>> = LazyLock::new(|| {
     vec![
-        //  HHMMSS
+        //  HHmmss
         Regex::new(r#"(?<hour>\d{2})(?<minute>\d{2})(?<second>\d{2})"#)
             .expect("This shouldn't panic at runtime."),
-        // HH-MM-SS
+        //  HHmmssSSS
+        Regex::new(r#"(?<hour>\d{2})(?<minute>\d{2})(?<second>\d{2})(?<millisecond>\d{3})"#)
+            .expect("This shouldn't panic at runtime."),
+        // HH-mm-ss
         Regex::new(r#"(?<hour>\d{2})[[:punct:]]{1}(?<minute>\d{2})[[:punct:]]{1}(?<second>\d{2})"#)
             .expect("This shouldn't panic at runtime."),
+        // HHmm
+        Regex::new(r#"(?<hour>\d{2})(?<minute>\d{2})"#).expect("This shouldn't panic at runtime."),
     ]
 });
 
@@ -89,6 +129,10 @@ pub struct Args {
     #[argh(switch)]
     pub apply_changes: bool,
 
+    /// also accept dates with single-digit months or days, e.g. 2023-9-7, 2025-12-4, 2026-1-29
+    #[argh(switch)]
+    pub allow_single_digit_date: bool,
+
     /// explain what is being done
     #[argh(switch, short = 'v')]
     pub verbose: bool,
@@ -110,6 +154,7 @@ pub struct App {
     client: Client,
     mode: Mode,
     apply_changes: bool,
+    allow_single_digit_date: bool,
 
     year_range: RangeInclusive<u16>,
 }
@@ -129,7 +174,9 @@ impl App {
             ));
 
             for asset in assets {
-                let Some(datetime) = extract_datetime(&asset.original_file_name) else {
+                let Some(datetime) =
+                    extract_datetime(&asset.original_file_name, self.allow_single_digit_date)
+                else {
                     debug(format!(
                         "Skipping {}, file name does not include a date.",
                         asset.original_file_name
@@ -244,6 +291,7 @@ pub struct Builder {
 
     mode: Mode,
     apply_changes: bool,
+    allow_single_digit_date: bool,
 }
 
 impl Builder {
@@ -258,11 +306,17 @@ impl Builder {
             until_year: current_year(),
             mode: Mode::IfUnset,
             apply_changes: false,
+            allow_single_digit_date: false,
         }
     }
 
     pub fn apply_changes(mut self) -> Self {
         self.apply_changes = true;
+        self
+    }
+
+    pub fn allow_single_digit_date(mut self) -> Self {
+        self.allow_single_digit_date = true;
         self
     }
 
@@ -296,6 +350,7 @@ impl Builder {
             client: self.client,
             mode: self.mode,
             apply_changes: self.apply_changes,
+            allow_single_digit_date: self.allow_single_digit_date,
             year_range: self.from_year..=self.until_year,
         }
     }
@@ -411,8 +466,8 @@ struct DateMatch {
     pub end: usize,
 }
 
-fn extract_datetime(file_name: &str) -> Option<DateTime> {
-    let date_match = extract_date(file_name)?;
+fn extract_datetime(file_name: &str, allow_single_digit_date: bool) -> Option<DateTime> {
+    let date_match = extract_date(file_name, allow_single_digit_date)?;
 
     let Some(time) = extract_time(&file_name[date_match.end..]) else {
         debug(format!(
@@ -423,8 +478,18 @@ fn extract_datetime(file_name: &str) -> Option<DateTime> {
     Some(date_match.date.to_datetime(time))
 }
 
-fn extract_date(file_name: &str) -> Option<DateMatch> {
-    for re in &*DATE_RE {
+fn extract_date(file_name: &str, allow_single_digit_date: bool) -> Option<DateMatch> {
+    extract_date_with(file_name, &DATE_RE).or_else(|| {
+        if allow_single_digit_date {
+            extract_date_with(file_name, &DATE_SINGLE_DIGIT_RE)
+        } else {
+            None
+        }
+    })
+}
+
+fn extract_date_with(file_name: &str, regexes: &LazyLock<Vec<Regex>>) -> Option<DateMatch> {
+    for re in &**regexes {
         if let Some(date) = _extract_date(file_name, re) {
             // The first photograph was made in 1826 (or 1827, historians aren't quite sure).
             // I don't think anyone has older pictures on their Immich server.
@@ -627,10 +692,6 @@ mod test {
                 "2023-09-27 19:13:15".parse().unwrap(),
             ),
             (
-                "Screenshot_2023-9-7_191315.jpg",
-                "2023-09-07 19:13:15".parse().unwrap(),
-            ),
-            (
                 "Screenshot_2023.09.27T191315.jpg",
                 "2023-09-27 19:13:15".parse().unwrap(),
             ),
@@ -666,7 +727,30 @@ mod test {
         ];
         for (file, expected_moment) in files {
             let datetime =
-                extract_datetime(file).unwrap_or_else(|| panic!("failed to parse {file}"));
+                extract_datetime(file, false).unwrap_or_else(|| panic!("failed to parse {file}"));
+            assert_eq!(datetime, expected_moment, "failed to parse {file}");
+        }
+    }
+
+    #[test]
+    fn test_extracting_datetime_with_single_digit_date() {
+        let files: Vec<(&str, DateTime)> = vec![
+            (
+                "Screenshot_2023-9-7_191315.jpg",
+                "2023-09-07 19:13:15".parse().unwrap(),
+            ),
+            (
+                "Screenshot_2023.9.7_191315.jpg",
+                "2023-09-07 19:13:15".parse().unwrap(),
+            ),
+        ];
+        for (file, expected_moment) in files {
+            assert!(
+                extract_datetime(file, false).is_none(),
+                "Single-digit date in {file} should not parse without --allow-single-digit-date"
+            );
+            let datetime =
+                extract_datetime(file, true).unwrap_or_else(|| panic!("failed to parse {file}"));
             assert_eq!(datetime, expected_moment, "failed to parse {file}");
         }
     }
@@ -677,8 +761,12 @@ mod test {
 
         for input in inputs {
             assert!(
-                extract_datetime(input).is_none(),
+                extract_datetime(input, false).is_none(),
                 "Invalid {input} was parsed successfully"
+            );
+            assert!(
+                extract_datetime(input, true).is_none(),
+                "Invalid {input} was parsed successfully with single-digit dates enabled"
             );
         }
     }
