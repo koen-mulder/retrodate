@@ -92,8 +92,7 @@ static TIME_RE: LazyLock<Vec<Regex>> = LazyLock::new(|| {
         Regex::new(r#"(?<hour>\d{2})[[:punct:]]{1}(?<minute>\d{2})[[:punct:]]{1}(?<second>\d{2})"#)
             .expect("This shouldn't panic at runtime."),
         // HHmm
-        Regex::new(r#"(?<hour>\d{2})(?<minute>\d{2})"#)
-            .expect("This shouldn't panic at runtime."),
+        Regex::new(r#"(?<hour>\d{2})(?<minute>\d{2})"#).expect("This shouldn't panic at runtime."),
     ]
 });
 
@@ -727,8 +726,8 @@ mod test {
             ("12252012(001).jpg", "2012-12-25 00:00:00".parse().unwrap()),
         ];
         for (file, expected_moment) in files {
-            let datetime = extract_datetime(file, false)
-                .unwrap_or_else(|| panic!("failed to parse {file}"));
+            let datetime =
+                extract_datetime(file, false).unwrap_or_else(|| panic!("failed to parse {file}"));
             assert_eq!(datetime, expected_moment, "failed to parse {file}");
         }
     }
@@ -750,8 +749,8 @@ mod test {
                 extract_datetime(file, false).is_none(),
                 "Single-digit date in {file} should not parse without --allow-single-digit-date"
             );
-            let datetime = extract_datetime(file, true)
-                .unwrap_or_else(|| panic!("failed to parse {file}"));
+            let datetime =
+                extract_datetime(file, true).unwrap_or_else(|| panic!("failed to parse {file}"));
             assert_eq!(datetime, expected_moment, "failed to parse {file}");
         }
     }
