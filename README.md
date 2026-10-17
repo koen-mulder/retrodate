@@ -70,7 +70,7 @@ Date of 20190720_130508.jpg set to 2019-07-20T13:05:08.
 
 ```bash
 $ ./retrodate --help
-Usage: retrodate --api-key <api-key> --host <host> [--if-unset] [--overwrite] [--threshold <threshold>] [--apply-changes] [-v] [--from-year <from-year>] [--until-year <until-year>] [--timeout <timeout>]
+Usage: retrodate --api-key <api-key> --host <host> [--if-unset] [--overwrite] [--threshold <threshold>] [--apply-changes] [--allow-single-digit-date] [-v] [--from-year <from-year>] [--until-year <until-year>] [--timeout <timeout>]
 
 Retrodate is a utility to retroactively date images on Immich based on an image's filename. This tool queries Immich for all filenames that contain a year, e.g. 2021 in 20210901_115950.jpg. Then, the date (and optional time) is parsed from the filename. You can control search using the arguments --from-year and --until-year.
 
@@ -79,7 +79,7 @@ Options:
                     permissions 'asset.read' and 'asset.update'.
   --host            URL of the immich API
   --if-unset        set the creation date of an asset, only if that asset
-                    doesn't have a creation date already. (default mode).
+                    doesn't have a creation date already (default mode).
   --overwrite       set the creation date of an asset, even if that asset has a
                     creation date already. Implies --if-unset.
   --threshold       maximum allowed time difference when deciding to update an
@@ -87,6 +87,9 @@ Options:
                     `30m`, `1h`, `2d`, or `1h30m`.
   --apply-changes   apply changes; without this flag, only print what would be
                     done
+  --allow-single-digit-date
+                    also accept dates with single-digit months or days, e.g.
+                    2023-9-7
   -v, --verbose     explain what is being done
   --from-year       the earliest year to include in the search, defaults to 2000
   --until-year      the latest year to include in the search, defaults to the

@@ -30,6 +30,10 @@ fn main() -> Result<()> {
         builder = builder.apply_changes();
     }
 
+    if args.allow_single_digit_date {
+        builder = builder.allow_single_digit_date();
+    }
+
     let threshold = args
         .threshold
         .map(|value| value.parse::<Span>())
