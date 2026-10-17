@@ -64,8 +64,6 @@ Date of IMG_20180301_131212.jpg set to 2018-03-01T13:12:12.
 Date of 20190720_130508.jpg set to 2019-07-20T13:05:08.
 ```
 
-
-
 # Usage
 
 ```bash
@@ -89,7 +87,7 @@ Options:
                     done
   --allow-single-digit-date
                     also accept dates with single-digit months or days, e.g.
-                    2023-9-7
+                    2023-9-7, 2025-12-4, 2026-1-29
   -v, --verbose     explain what is being done
   --from-year       the earliest year to include in the search, defaults to 2000
   --until-year      the latest year to include in the search, defaults to the
@@ -98,8 +96,6 @@ Options:
                     against Immich's HTTP API
   --help, help      display usage information
 ```
-
-
 
 ## Contributing
 

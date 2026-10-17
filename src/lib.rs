@@ -20,62 +20,62 @@ pub static VERBOSE: AtomicBool = AtomicBool::new(false);
 static DATE_RE: LazyLock<Vec<Regex>> = LazyLock::new(|| {
     vec![
         // YYYYMMDD
-        Regex::new(r#"(?<year>19\d{2}|20\d{2})(?<month>0[1-9]|1[0-2])(?<day>0[1-9]|[1-2][0-9]|3[0-1])"#)
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)(?<month>0[1-9]|1[0-2])(?<day>0[1-9]|[1-2][0-9]|3[0-1])"#)
             .expect("This shouldn't panic at runtime."),
         // YYYY-MM-DD
-        Regex::new(r#"(?<year>19\d{2}|20\d{2})-(?<month>0[1-9]|1[0-2])-(?<day>0[1-9]|[1-2][0-9]|3[0-1])"#)
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)-(?<month>0[1-9]|1[0-2])-(?<day>0[1-9]|[1-2][0-9]|3[0-1])"#)
             .expect("This shouldn't panic at runtime."),
         // YYYY.MM.DD
-        Regex::new(r#"(?<year>19\d{2}|20\d{2})\.(?<month>0[1-9]|1[0-2])\.(?<day>0[1-9]|[1-2][0-9]|3[0-1])"#)
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)\.(?<month>0[1-9]|1[0-2])\.(?<day>0[1-9]|[1-2][0-9]|3[0-1])"#)
         .expect("This shouldn't panic at runtime."),
         // DDMMYYYY
-        Regex::new(r#"(?<day>0[1-9]|[1-2][0-9]|3[0-1])(?<month>0[1-9]|1[0-2])(?<year>19\d{2}|20\d{2})"#)
+        Regex::new(r#"(?<day>0[1-9]|[1-2][0-9]|3[0-1])(?<month>0[1-9]|1[0-2])(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
             .expect("This shouldn't panic at runtime."),
         // DD-MM-YYYY
-        Regex::new(r#"(?<day>0[1-9]|[1-2][0-9]|3[0-1])-(?<month>0[1-9]|1[0-2])-(?<year>19\d{2}|20\d{2})"#)
+        Regex::new(r#"(?<day>0[1-9]|[1-2][0-9]|3[0-1])-(?<month>0[1-9]|1[0-2])-(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
             .expect("This shouldn't panic at runtime."),
         // DD.MM.YYYY
-        Regex::new(r#"(?<day>0[1-9]|[1-2][0-9]|3[0-1])\.(?<month>0[1-9]|1[0-2])\.(?<year>19\d{2}|20\d{2})"#)
+        Regex::new(r#"(?<day>0[1-9]|[1-2][0-9]|3[0-1])\.(?<month>0[1-9]|1[0-2])\.(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
             .expect("This shouldn't panic at runtime."),
         // YYYYDDMM
-        Regex::new(r#"(?<year>19\d{2}|20\d{2})(?<day>0[1-9]|[1-2][0-9]|3[0-1])(?<month>0[1-9]|1[0-2])"#)
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)(?<day>0[1-9]|[1-2][0-9]|3[0-1])(?<month>0[1-9]|1[0-2])"#)
             .expect("This shouldn't panic at runtime."),
         // YYYY-DD-MM
-        Regex::new(r#"(?<year>19\d{2}|20\d{2})-(?<day>0[1-9]|[1-2][0-9]|3[0-1])-(?<month>0[1-9]|1[0-2])"#)
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)-(?<day>0[1-9]|[1-2][0-9]|3[0-1])-(?<month>0[1-9]|1[0-2])"#)
             .expect("This shouldn't panic at runtime."),
         // YYYY.DD.MM
-        Regex::new(r#"(?<year>19\d{2}|20\d{2})\.(?<day>0[1-9]|[1-2][0-9]|3[0-1])\.(?<month>0[1-9]|1[0-2])"#)
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)\.(?<day>0[1-9]|[1-2][0-9]|3[0-1])\.(?<month>0[1-9]|1[0-2])"#)
             .expect("This shouldn't panic at runtime."),
         // MMDDYYYY
-        Regex::new(r#"(?<month>0[1-9]|1[0-2])(?<day>0[1-9]|[1-2][0-9]|3[0-1])(?<year>19\d{2}|20\d{2})"#)
+        Regex::new(r#"(?<month>0[1-9]|1[0-2])(?<day>0[1-9]|[1-2][0-9]|3[0-1])(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
             .expect("This shouldn't panic at runtime."),
         // MM-DD-YYYY
-        Regex::new(r#"(?<month>0[1-9]|1[0-2])-(?<day>0[1-9]|[1-2][0-9]|3[0-1])-(?<year>19\d{2}|20\d{2})"#)
+        Regex::new(r#"(?<month>0[1-9]|1[0-2])-(?<day>0[1-9]|[1-2][0-9]|3[0-1])-(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
             .expect("This shouldn't panic at runtime."),
         // MM.DD.YYYY
-        Regex::new(r#"(?<month>0[1-9]|1[0-2])\.(?<day>0[1-9]|[1-2][0-9]|3[0-1])\.(?<year>19\d{2}|20\d{2})"#)
+        Regex::new(r#"(?<month>0[1-9]|1[0-2])\.(?<day>0[1-9]|[1-2][0-9]|3[0-1])\.(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
             .expect("This shouldn't panic at runtime."),
     ]
 });
 static DATE_SINGLE_DIGIT_RE: LazyLock<Vec<Regex>> = LazyLock::new(|| {
     vec![
         // YYYY-[M]M-[D]D
-        Regex::new(r#"(?<year>19\d{2}|20\d{2})-(?<month>[1-9]|1[0-2])-(?<day>[1-9]|[1-2][0-9]|3[0-1])"#)
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)-(?<month>[1-9]|1[0-2])-(?<day>[1-9]|[1-2][0-9]|3[0-1])"#)
             .expect("This shouldn't panic at runtime."),
         // YYYY.[M]M.[D]D
-        Regex::new(r#"(?<year>19\d{2}|20\d{2})\.(?<month>[1-9]|1[0-2])\.(?<day>[1-9]|[1-2][0-9]|3[0-1])"#)
+        Regex::new(r#"(?<year>18\d{2}|19\d{2}|20\d{2}|2100)\.(?<month>[1-9]|1[0-2])\.(?<day>[1-9]|[1-2][0-9]|3[0-1])"#)
             .expect("This shouldn't panic at runtime."),
         // [D]D-[M]M-YYYY
-        Regex::new(r#"(?<day>[1-9]|[1-2][0-9]|3[0-1])-(?<month>[1-9]|1[0-2])-(?<year>19\d{2}|20\d{2})"#)
+        Regex::new(r#"(?<day>[1-9]|[1-2][0-9]|3[0-1])-(?<month>[1-9]|1[0-2])-(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
             .expect("This shouldn't panic at runtime."),
         // [D]D.[M]M.YYYY
-        Regex::new(r#"(?<day>[1-9]|[1-2][0-9]|3[0-1])\.(?<month>[1-9]|1[0-2])\.(?<year>19\d{2}|20\d{2})"#)
+        Regex::new(r#"(?<day>[1-9]|[1-2][0-9]|3[0-1])\.(?<month>[1-9]|1[0-2])\.(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
         .expect("This shouldn't panic at runtime."),
         // [M]M-[D]D-YYYY
-        Regex::new(r#"(?<month>[1-9]|1[0-2])-(?<day>[1-9]|[1-2][0-9]|3[0-1])-(?<year>19\d{2}|20\d{2})"#)
+        Regex::new(r#"(?<month>[1-9]|1[0-2])-(?<day>[1-9]|[1-2][0-9]|3[0-1])-(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
             .expect("This shouldn't panic at runtime."),
         // [M]M.[D]D.YYYY
-        Regex::new(r#"(?<month>[1-9]|1[0-2])\.(?<day>[1-9]|[1-2][0-9]|3[0-1])\.(?<year>19\d{2}|20\d{2})"#)
+        Regex::new(r#"(?<month>[1-9]|1[0-2])\.(?<day>[1-9]|[1-2][0-9]|3[0-1])\.(?<year>18\d{2}|19\d{2}|20\d{2}|2100)"#)
             .expect("This shouldn't panic at runtime."),
     ]
 });
