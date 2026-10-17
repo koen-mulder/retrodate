@@ -14,6 +14,7 @@ use std::{
     time::Duration,
 };
 use ureq::http::Uri;
+use uuid::Uuid;
 
 pub static VERBOSE: AtomicBool = AtomicBool::new(false);
 
@@ -133,6 +134,10 @@ pub struct Args {
     #[argh(switch)]
     pub allow_single_digit_date: bool,
 
+    /// also process files whose name (without extension) is a UUID; these are skipped by default
+    #[argh(switch)]
+    pub include_uuid_filenames: bool,
+
     /// explain what is being done
     #[argh(switch, short = 'v')]
     pub verbose: bool,
@@ -155,6 +160,7 @@ pub struct App {
     mode: Mode,
     apply_changes: bool,
     allow_single_digit_date: bool,
+    include_uuid_filenames: bool,
 
     year_range: RangeInclusive<u16>,
 }
@@ -174,6 +180,14 @@ impl App {
             ));
 
             for asset in assets {
+                if !self.include_uuid_filenames && is_uuid_filename(&asset.original_file_name) {
+                    debug(format!(
+                        "Skipping {}, file name is a UUID. Call `retrodate` with --include-uuid-filenames to process it.",
+                        asset.original_file_name
+                    ));
+                    continue;
+                }
+
                 let Some(datetime) =
                     extract_datetime(&asset.original_file_name, self.allow_single_digit_date)
                 else {
@@ -292,6 +306,7 @@ pub struct Builder {
     mode: Mode,
     apply_changes: bool,
     allow_single_digit_date: bool,
+    include_uuid_filenames: bool,
 }
 
 impl Builder {
@@ -307,6 +322,7 @@ impl Builder {
             mode: Mode::IfUnset,
             apply_changes: false,
             allow_single_digit_date: false,
+            include_uuid_filenames: false,
         }
     }
 
@@ -317,6 +333,11 @@ impl Builder {
 
     pub fn allow_single_digit_date(mut self) -> Self {
         self.allow_single_digit_date = true;
+        self
+    }
+
+    pub fn include_uuid_filenames(mut self) -> Self {
+        self.include_uuid_filenames = true;
         self
     }
 
@@ -351,6 +372,7 @@ impl Builder {
             mode: self.mode,
             apply_changes: self.apply_changes,
             allow_single_digit_date: self.allow_single_digit_date,
+            include_uuid_filenames: self.include_uuid_filenames,
             year_range: self.from_year..=self.until_year,
         }
     }
@@ -457,6 +479,15 @@ fn debug(message: String) {
     if VERBOSE.load(Ordering::Relaxed) {
         println!("{message}");
     }
+}
+
+/// Returns true when the filename stem (without extension) is a UUID.
+fn is_uuid_filename(file_name: &str) -> bool {
+    let stem = match file_name.rsplit_once('.') {
+        Some((stem, _)) if !stem.is_empty() => stem,
+        _ => file_name,
+    };
+    Uuid::parse_str(stem).is_ok()
 }
 
 #[derive(Debug)]
@@ -624,7 +655,7 @@ fn current_year() -> u16 {
 
 #[cfg(test)]
 mod test {
-    use crate::extract_datetime;
+    use crate::{extract_datetime, is_uuid_filename};
     use jiff::civil::DateTime;
 
     #[test]
@@ -769,5 +800,17 @@ mod test {
                 "Invalid {input} was parsed successfully with single-digit dates enabled"
             );
         }
+    }
+
+    #[test]
+    fn test_is_uuid_filename() {
+        assert!(is_uuid_filename("9e8449ee-9f27-440f-949b-69f98a200921.jpg"));
+        assert!(is_uuid_filename("9E8449EE-9F27-440F-949B-69F98A200921.JPG"));
+        assert!(is_uuid_filename("50684a19-a9b7-4d4d-a8ba-8f04e3928d64"));
+        assert!(!is_uuid_filename("Screenshot_20230927_191315.jpg"));
+        assert!(!is_uuid_filename(
+            "prefix-9e8449ee-9f27-440f-949b-69f98a200921.jpg"
+        ));
+        assert!(!is_uuid_filename("2016-0101"));
     }
 }
