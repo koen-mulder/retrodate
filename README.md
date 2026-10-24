@@ -1,5 +1,19 @@
 # Retrodate
 
+> **Maintained fork.** This is a community fork of
+> [OrangeTux/retrodate](https://github.com/OrangeTux/retrodate).
+> Upstream has not merged these pull requests yet:
+> [#32](https://github.com/OrangeTux/retrodate/pull/32),
+> [#33](https://github.com/OrangeTux/retrodate/pull/33),
+> [#34](https://github.com/OrangeTux/retrodate/pull/34),
+> [#35](https://github.com/OrangeTux/retrodate/pull/35),
+> [#36](https://github.com/OrangeTux/retrodate/pull/36).
+>
+> Prefer the [official releases](https://github.com/OrangeTux/retrodate/releases)
+> when those changes land upstream. Use **this** fork’s
+> [releases](https://github.com/koen-mulder/retrodate/releases) if you need
+> the pending fixes/features now.
+
 Retrodate is a utility to retroactively date images on Immich.
 
 Screenshots and images shared via Whatsapp or other media usually lack metadata;
@@ -14,7 +28,7 @@ a pictures exif data.
 
 ## Examples
 
-Obtain `retrodate` from the [releases](https://github.com/OrangeTux/retrodate/releases).
+Obtain `retrodate` from the [releases](https://github.com/koen-mulder/retrodate/releases).
 
 Then, obtain an [Immich API key](https://docs.immich.app/features/command-line-interface#obtain-the-api-key) with the permission "asset.read" and "asset.update".
 
